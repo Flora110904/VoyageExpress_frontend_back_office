@@ -1,0 +1,79 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">🚗 Véhicules</h1>
+      <p class="text-gray-600 text-sm mt-1">Gérez la flotte de véhicules (avions et bus)</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouveau véhicule</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="card">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <input 
+        type="search" 
+        [(ngModel)]="searchTerm"
+        (input)="filterVehicules()"
+        class="w-full px-4 py-2 border rounded-lg"
+        placeholder="Rechercher par ID...">
+      <select 
+        [(ngModel)]="selectedType"
+        (change)="filterVehicules()"
+        class="w-full px-4 py-2 border rounded-lg">
+        <option *ngFor="let type of types" [value]="type.value">{{ type.label }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="text-center py-8">Chargement...</div>
+  <div *ngIf="error" class="bg-red-50 text-red-700 p-4 rounded-lg">{{ error }}</div>
+
+  <!-- Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div *ngFor="let vehicule of filteredVehicules" class="card hover:shadow-xl transition-all text-center">
+      <div class="text-6xl mb-4">{{ getTypeIcon(vehicule.type) }}</div>
+      <h3 class="font-bold text-lg mb-2">{{ vehicule.trackingId }}</h3>
+      <div class="space-y-2">
+        <p class="text-sm">
+          <span class="px-2 py-1 rounded-full text-xs font-medium" [ngClass]="getTypeColor(vehicule.type)">
+            {{ vehicule.type }}
+          </span>
+        </p>
+        <p class="text-2xl font-bold text-primary-600">{{ vehicule.nombrePlace }}</p>
+        <p class="text-xs text-gray-500">places</p>
+      </div>
+      <div class="mt-4 pt-4 border-t flex gap-2">
+        <button (click)="openEditModal(vehicule)" class="flex-1 btn btn-primary text-sm">✏️</button>
+        <button (click)="openDeleteConfirm(vehicule)" class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="filteredVehicules.length === 0 && !loading" class="card text-center py-12">
+    <div class="text-6xl mb-4">🔍</div>
+    <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun véhicule trouvé</h3>
+  </div>
+</div>
+
+<!-- Form Modal -->
+<app-vehicule-form-modal
+  [isOpen]="isModalOpen"
+  [vehicule]="selectedVehicule"
+  (closed)="closeModal()"
+  (saved)="onVehiculeSaved($event)">
+</app-vehicule-form-modal>
+
+<!-- Confirm Delete Modal -->
+<app-confirm-modal
+  [isOpen]="isConfirmModalOpen"
+  [title]="'Supprimer le v\u00e9hicule'"
+  [message]="'\u00cates-vous s\u00fbr de vouloir supprimer le v\u00e9hicule ' + (vehiculeToDelete?.trackingId) + ' ? Cette action est irr\u00e9versible.'"
+  [confirmText]="'Supprimer'"
+  [cancelText]="'Annuler'"
+  [icon]="'\ud83d\uddd1\ufe0f'"
+  [type]="'danger'"
+  [loading]="confirmModalLoading"
+  [errorMessage]="confirmModalError"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()">
+</app-confirm-modal>

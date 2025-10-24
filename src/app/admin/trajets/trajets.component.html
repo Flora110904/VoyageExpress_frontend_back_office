@@ -1,0 +1,189 @@
+<div class="space-y-6">
+  <!-- Header Section -->
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">🗺️ Trajets & Itinéraires</h1>
+        <p class="text-gray-600 text-sm mt-1">Gérez les trajets et itinéraires disponibles</p>
+      </div>
+    </div>
+    <button class="bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nouveau trajet
+    </button>
+  </div>
+
+  <!-- Search Section -->
+  <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-6">
+    <div class="relative">
+      <svg class="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input
+        type="search"
+        [(ngModel)]="searchTerm"
+        (input)="filterTrajets()"
+        class="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-200"
+        placeholder="Rechercher par ville de départ ou d'arrivée...">
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-12">
+    <div class="inline-flex items-center gap-3">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <span class="text-gray-600">Chargement des trajets...</span>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="bg-red-50 border-l-4 border-red-500 rounded-xl p-4">
+    <div class="flex items-center gap-3">
+      <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+      </svg>
+      <span class="text-red-700">{{ error }}</span>
+    </div>
+  </div>
+
+  <!-- Trajet Cards Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div *ngFor="let trajet of filteredTrajets"
+         class="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 hover:shadow-xl hover:border-primary-200/50 transition-all duration-300 overflow-hidden">
+      <!-- Card Header -->
+      <div class="p-6 pb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 bg-gradient-to-br from-secondary-400 to-secondary-500 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-200">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full font-mono">{{ trajet.trackingId }}</span>
+        </div>
+
+        <!-- Route Information -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                <p class="text-xs text-gray-500 font-medium">Départ</p>
+              </div>
+              <p class="font-bold text-lg text-gray-900">{{ trajet.villeDepart }}</p>
+              <p class="text-sm text-gray-600 flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {{ trajet.heureDepart }}
+              </p>
+            </div>
+
+            <div class="flex-shrink-0 mx-6 relative">
+              <div class="w-px h-12 bg-gradient-to-b from-secondary-400 to-primary-400"></div>
+              <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white border-2 border-secondary-400 rounded-full"></div>
+              <svg class="w-6 h-6 text-secondary-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -mt-3 -ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+
+            <div class="flex-1 text-right">
+              <div class="flex items-center justify-end gap-2 mb-1">
+                <p class="text-xs text-gray-500 font-medium">Arrivée</p>
+                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+              </div>
+              <p class="font-bold text-lg text-gray-900">{{ trajet.villeArrivee }}</p>
+              <p class="text-sm text-gray-600">--:--</p>
+            </div>
+          </div>
+
+          <!-- Price and Seats -->
+          <div class="pt-4 border-t border-gray-100">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-gray-500 mb-1">Prix du billet</p>
+                <div class="flex items-baseline gap-1">
+                  <p class="font-bold text-xl text-primary-600">{{ trajet.prix }}</p>
+                  <span class="text-sm text-gray-500">FCFA</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-gray-500 mb-1">Places disponibles</p>
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                  </svg>
+                  <p class="font-bold text-lg text-gray-900">{{ trajet.placeDisponible }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Actions -->
+      <div class="px-6 pb-6">
+        <div class="flex gap-3">
+          <button
+            (click)="openEditModal(trajet)"
+            class="flex-1 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            Modifier
+          </button>
+          <button
+            (click)="openDeleteConfirm(trajet)"
+            class="px-4 py-2.5 text-red-600 hover:bg-red-50 border border-red-200 hover:border-red-300 rounded-lg transition-all duration-200 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="filteredTrajets.length === 0 && !loading" class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 text-center py-16">
+    <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+      <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+    </div>
+    <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun trajet trouvé</h3>
+    <p class="text-gray-600 mb-6">Aucun trajet ne correspond à votre recherche</p>
+    <button class="bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200">
+      Créer un nouveau trajet
+    </button>
+  </div>
+</div>
+
+<!-- Form Modal -->
+<app-trajet-form-modal
+  [isOpen]="isModalOpen"
+  [trajet]="selectedTrajet"
+  (closed)="closeModal()"
+  (saved)="onTrajetSaved($event)">
+</app-trajet-form-modal>
+
+<!-- Confirm Delete Modal -->
+<app-confirm-modal
+  [isOpen]="isConfirmModalOpen"
+  [title]="'Supprimer le trajet'"
+  [message]="'\u00cates-vous s\u00fbr de vouloir supprimer le trajet ' + (trajetToDelete?.villeDepart) + ' - ' + (trajetToDelete?.villeArrivee) + ' ? Cette action est irr\u00e9versible.'"
+  [confirmText]="'Supprimer'"
+  [cancelText]="'Annuler'"
+  [icon]="'\ud83d\uddd1\ufe0f'"
+  [type]="'danger'"
+  [loading]="confirmModalLoading"
+  [errorMessage]="confirmModalError"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()">
+</app-confirm-modal>

@@ -1,0 +1,121 @@
+<div class="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-white">
+  <!-- Sidebar -->
+  <aside
+    [class.w-64]="isSidebarOpen"
+    [class.w-20]="!isSidebarOpen"
+    class="bg-gradient-to-b from-primary-800 via-primary-700 to-primary-900 text-white transition-all duration-300 ease-in-out shadow-xl relative z-10 border-r border-primary-600/30">
+
+    <!-- Logo Section -->
+    <div class="flex items-center justify-between p-6 border-b border-primary-600/50">
+      <div class="flex items-center gap-3" *ngIf="isSidebarOpen">
+        <div class="w-12 h-12 bg-gradient-to-br from-accent-400 to-accent-500 rounded-xl flex items-center justify-center shadow-lg">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold bg-gradient-to-r from-white to-accent-100 bg-clip-text text-transparent">VoyageExpress</h1>
+          <p class="text-xs text-primary-100">Admin Panel</p>
+        </div>
+      </div>
+      <div *ngIf="!isSidebarOpen" class="w-12 h-12 bg-gradient-to-br from-accent-400 to-accent-500 rounded-xl flex items-center justify-center mx-auto shadow-lg">
+        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="mt-6 px-3">
+      <div *ngFor="let item of menuItems" class="mb-2">
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="bg-gradient-to-r from-accent-500/20 to-secondary-500/20 border-l-4 border-accent-400 shadow-lg"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gradient-to-r hover:from-accent-500/10 hover:to-secondary-500/10 transition-all duration-200 group cursor-pointer border-l-4 border-transparent">
+          <div class="w-5 h-5 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" [innerHTML]="getIconSvg(item.icon)"></svg>
+          </div>
+          <span *ngIf="isSidebarOpen" class="font-medium text-white group-hover:text-accent-100">{{ item.label }}</span>
+          <span
+            *ngIf="isSidebarOpen && item.badge"
+            class="ml-auto bg-gradient-to-r from-accent-400 to-accent-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-md">
+            {{ item.badge }}
+          </span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- User Section -->
+    <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-primary-600/50 bg-primary-900/50 backdrop-blur-sm">
+      <div class="flex items-center gap-3" *ngIf="isSidebarOpen">
+        <div class="relative">
+          <img [src]="getUserAvatar()" alt="User" class="w-10 h-10 rounded-full ring-2 ring-accent-400/50 shadow-lg">
+          <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-secondary-400 rounded-full border-2 border-primary-800 flex items-center justify-center">
+            <div class="w-2 h-2 bg-white rounded-full"></div>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-white truncate">{{ getUserName() }}</p>
+          <p class="text-xs text-primary-200 truncate">{{ getUserEmail() }}</p>
+        </div>
+        <button (click)="logout()" class="text-primary-200 hover:text-accent-300 p-2 rounded-lg hover:bg-accent-500/10 transition-colors duration-200" title="Déconnexion">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </button>
+      </div>
+      <div *ngIf="!isSidebarOpen" class="flex justify-center">
+        <div class="relative">
+          <img [src]="getUserAvatar()" alt="User" class="w-10 h-10 rounded-full ring-2 ring-accent-400/50 cursor-pointer hover:ring-accent-300 transition-all duration-200" (click)="logout()">
+          <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-secondary-400 rounded-full border-2 border-primary-800 flex items-center justify-center">
+            <div class="w-2 h-2 bg-white rounded-full"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-200/50">
+      <div class="flex items-center justify-between px-6 py-4">
+        <button
+          (click)="toggleSidebar()"
+          class="text-gray-600 hover:text-primary-600 transition-colors duration-200 p-2 hover:bg-primary-50 rounded-lg">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <div class="flex items-center gap-4">
+          <!-- Search Bar -->
+          <div class="relative hidden md:block">
+            <input
+              type="search"
+              placeholder="Recherche..."
+              class="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-64 transition-all duration-200">
+            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+
+          <!-- Notifications -->
+          <button class="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <span class="absolute top-1 right-1 w-2 h-2 bg-accent-500 rounded-full animate-pulse"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 to-white">
+      <div class="p-6">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+  </div>
+</div>

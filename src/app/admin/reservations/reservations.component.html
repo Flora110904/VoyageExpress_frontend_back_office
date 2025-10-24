@@ -1,0 +1,113 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">📋 Réservations</h1>
+      <p class="text-gray-600 text-sm mt-1">Gérez toutes les réservations de la plateforme</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">➕ Nouvelle réservation</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="card">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <input 
+          type="search" 
+          [(ngModel)]="searchTerm"
+          (input)="filterReservations()"
+          class="w-full px-4 py-2 border rounded-lg"
+          placeholder="Rechercher par ID ou nom...">
+      </div>
+      <div>
+        <select 
+          [(ngModel)]="selectedStatut"
+          (change)="filterReservations()"
+          class="w-full px-4 py-2 border rounded-lg">
+          <option *ngFor="let statut of statuts" [value]="statut.value">
+            {{ statut.label }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading/Error -->
+  <div *ngIf="loading" class="text-center py-8">Chargement...</div>
+  <div *ngIf="error" class="bg-red-50 text-red-700 p-4 rounded-lg">{{ error }}</div>
+
+  <!-- Table -->
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Local</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr *ngFor="let reservation of filteredReservations" class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ reservation.trackingId }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{{ reservation.userName || reservation.utilisateurTrackingId }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{{ reservation.localName || reservation.localTrackingId }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{{ formatDate(reservation.dateReservation) }}</td>
+            <td class="px-6 py-4">
+              <span class="px-2 py-1 text-xs font-medium rounded-full" [ngClass]="getStatutClass(reservation.statut)">
+                {{ getStatutLabel(reservation.statut) }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex gap-2">
+                <button 
+                  (click)="openEditModal(reservation)"
+                  class="text-blue-600 hover:text-blue-800"
+                  title="Modifier">
+                  ✏️
+                </button>
+                <button 
+                  (click)="openDeleteConfirm(reservation)"
+                  class="text-red-600 hover:text-red-800"
+                  title="Supprimer">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="filteredReservations.length === 0" class="text-center py-12">
+        <div class="text-6xl mb-4">🔍</div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucune réservation trouvée</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Form Modal -->
+<app-reservation-form-modal
+  [isOpen]="isModalOpen"
+  [reservation]="selectedReservation"
+  (closed)="closeModal()"
+  (saved)="onReservationSaved($event)">
+</app-reservation-form-modal>
+
+<!-- Confirm Delete Modal -->
+<app-confirm-modal
+  [isOpen]="isConfirmModalOpen"
+  [title]="'Supprimer la réservation'"
+  [message]="'Êtes-vous sûr de vouloir supprimer la réservation ' + (reservationToDelete?.trackingId) + ' ? Cette action est irréversible.'"
+  [confirmText]="'Supprimer'"
+  [cancelText]="'Annuler'"
+  [icon]="'🗑️'"
+  [type]="'danger'"
+  [loading]="confirmModalLoading"
+  [errorMessage]="confirmModalError"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()">
+</app-confirm-modal>

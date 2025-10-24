@@ -1,0 +1,155 @@
+<div class="space-y-6">
+  <!-- Breadcrumb -->
+  <nav class="flex items-center text-sm text-gray-500 mb-4">
+    <a href="#" class="hover:text-gray-900 flex items-center gap-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+      Maison
+    </a>
+    <span class="mx-2">›</span>
+    <a href="#" class="hover:text-gray-900">Utilisateurs</a>
+    <span class="mx-2">›</span>
+    <span class="text-gray-900 font-medium">Liste</span>
+  </nav>
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Tous les utilisateurs</h1>
+      <p class="text-gray-600 text-sm mt-1">Gérez tous les utilisateurs de la plateforme</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">
+      ➕ Ajouter un utilisateur
+    </button>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Search -->
+      <div class="relative">
+        <input 
+          type="search" 
+          [(ngModel)]="searchTerm"
+          (input)="filterUsers()"
+          placeholder="Rechercher par nom, email ou téléphone..." 
+          class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </div>
+
+      <!-- Role Filter -->
+      <select 
+        [(ngModel)]="selectedRole"
+        (change)="filterUsers()"
+        class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+        <option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option>
+      </select>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200">
+      <div class="text-center">
+        <p class="text-2xl font-bold text-gray-900">{{ users.length }}</p>
+        <p class="text-sm text-gray-600">Total</p>
+      </div>
+      <div class="text-center">
+        <p class="text-2xl font-bold text-blue-600">{{ countUsersByRole(Role.CLIENT) }}</p>
+        <p class="text-sm text-gray-600">Clients</p>
+      </div>
+      <div class="text-center">
+        <p class="text-2xl font-bold text-indigo-600">{{ countUsersByRole(Role.COMPAGNIE_AERIEN) }}</p>
+        <p class="text-sm text-gray-600">Compagnies</p>
+      </div>
+      <div class="text-center">
+        <p class="text-2xl font-bold text-orange-600">{{ countUsersByRole(Role.ETABLISSEMENT) }}</p>
+        <p class="text-sm text-gray-600">Établissements</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="card overflow-hidden p-0">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Utilisateur</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Rôle</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
+            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let user of filteredUsers" class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold shadow-md">
+                  {{ user.prenom.charAt(0) }}{{ user.nom.charAt(0) }}
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900">{{ user.prenom }} {{ user.nom }}</p>
+                  <p class="text-sm text-gray-500">{{ user.email }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-2 text-gray-700">
+                <span class="text-lg">📱</span>
+                <span>{{ user.telephone }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <span [class]="getRoleColor(user.role)" class="px-3 py-1 rounded-full text-xs font-semibold">
+                {{ getRoleLabel(user.role) }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">{{ user.trackingId }}</code>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center justify-end gap-2">
+                <button 
+                  (click)="editUser(user)"
+                  class="btn btn-primary text-sm flex items-center gap-2"
+                  title="Modifier">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                  Modifier l'utilisateur
+                </button>
+                <button 
+                  (click)="deleteUser(user)"
+                  class="btn btn-danger text-sm flex items-center gap-2"
+                  title="Supprimer">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                  Supprimer l'utilisateur
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <!-- Empty State -->
+      <div *ngIf="filteredUsers.length === 0" class="text-center py-12">
+        <div class="text-6xl mb-4">🔍</div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun utilisateur trouvé</h3>
+        <p class="text-gray-600">Essayez de modifier vos critères de recherche</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<app-user-form-modal 
+  [isOpen]="isModalOpen"
+  [user]="selectedUser"
+  (closed)="closeModal()"
+  (saved)="onUserSaved($event)">
+</app-user-form-modal>
