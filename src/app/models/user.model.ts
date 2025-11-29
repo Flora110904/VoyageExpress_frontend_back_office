@@ -5,7 +5,7 @@ export interface UserRequest {
   prenom: string;
   email: string;
   password: string;
-  role: string; // or Role if backend expects enum-compatible strings
+  role: Role;
   telephone: string;
 }
 
@@ -17,8 +17,6 @@ export interface UserResponse {
   role: Role;
   telephone: string;
   actif: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface UtilisateurResponse {
@@ -29,6 +27,4 @@ export interface UtilisateurResponse {
   role: Role;
   telephone: string;
   actif: boolean;
-  createdAt: string;
-  updatedAt: string;
 }

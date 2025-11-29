@@ -1,18 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Role } from '../../models/enums.model';
 import { UserResponse } from '../../models/user.model';
 import { UserServiceApi } from '../../services/user.service';
 import { UserFormModalComponent } from './user-form-modal.component';
+import { ConfirmModalComponent } from '../../shared/confirm-modal.component';
+import { ActionFeedbackModalComponent, FeedbackModalType } from '../../shared/action-feedback-modal.component';
 
 @Component({
   selector: 'app-users',
-  imports: [CommonModule, FormsModule, UserFormModalComponent],
+  imports: [CommonModule, FormsModule, UserFormModalComponent, ConfirmModalComponent, ActionFeedbackModalComponent],
   templateUrl: './users.component.html',
   styleUrl: './users.component.css'
 })
-export class UsersComponent implements OnInit {
+export class UsersComponent implements OnInit, OnDestroy {
   users: UserResponse[] = [];
   filteredUsers: UserResponse[] = [];
   searchTerm: string = '';
@@ -20,11 +22,42 @@ export class UsersComponent implements OnInit {
   Role = Role; // Expose enum to template
   loading: boolean = false;
   error: string | null = null;
-  
+  togglingUserId: string | null = null;
+
   // Modal state
   isModalOpen = false;
   selectedUser: UserResponse | null = null;
-  
+
+  private readonly activableRoles = new Set<Role>([
+    Role.COMPAGNIE_AERIEN,
+    Role.COMPAGNIE_BUS,
+    Role.ETABLISSEMENT
+  ]);
+
+  // Confirmation modal state
+  confirmModal = {
+    isOpen: false,
+    loading: false,
+    errorMessage: '',
+    title: 'Confirmation',
+    message: '',
+    confirmText: 'Confirmer',
+    cancelText: 'Annuler',
+    icon: '❓',
+    type: 'warning' as 'danger' | 'warning' | 'info'
+  };
+  private pendingConfirmAction: (() => void) | null = null;
+
+  // Feedback modal state
+  feedbackModal = {
+    isOpen: false,
+    type: 'info' as FeedbackModalType,
+    title: '',
+    message: '',
+    icon: 'ℹ️',
+    buttonText: 'Fermer'
+  };
+
   roles = [
     { value: 'all', label: 'Tous les rôles' },
     { value: Role.ADMIN, label: 'Administrateur' },
@@ -43,10 +76,10 @@ export class UsersComponent implements OnInit {
   loadUsers() {
     this.loading = true;
     this.error = null;
-    
+
     this.userService.list().subscribe({
       next: (data) => {
-        this.users = data;
+        this.users = data.map(user => this.decorateUser(user));
         this.filteredUsers = [...this.users];
         this.loading = false;
       },
@@ -69,9 +102,7 @@ export class UsersComponent implements OnInit {
         email: 'amadou.diallo@email.com',
         role: Role.CLIENT,
         telephone: '+221 77 123 45 67',
-        actif: true,
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z'
+        actif: true
       },
       {
         trackingId: 'USR-002',
@@ -80,9 +111,7 @@ export class UsersComponent implements OnInit {
         email: 'fatou.sow@email.com',
         role: Role.CLIENT,
         telephone: '+221 76 234 56 78',
-        actif: true,
-        createdAt: '2024-01-16T11:00:00Z',
-        updatedAt: '2024-01-16T11:00:00Z'
+        actif: true
       },
       {
         trackingId: 'USR-003',
@@ -91,9 +120,7 @@ export class UsersComponent implements OnInit {
         email: 'admin@airsenegal.sn',
         role: Role.COMPAGNIE_AERIEN,
         telephone: '+221 33 865 65 65',
-        actif: true,
-        createdAt: '2024-01-17T09:00:00Z',
-        updatedAt: '2024-01-17T09:00:00Z'
+        actif: false
       },
       {
         trackingId: 'USR-004',
@@ -102,9 +129,7 @@ export class UsersComponent implements OnInit {
         email: 'moussa.ndiaye@email.com',
         role: Role.COMPAGNIE_BUS,
         telephone: '+221 70 345 67 89',
-        actif: true,
-        createdAt: '2024-01-18T14:00:00Z',
-        updatedAt: '2024-01-18T14:00:00Z'
+        actif: true
       },
       {
         trackingId: 'USR-005',
@@ -113,9 +138,7 @@ export class UsersComponent implements OnInit {
         email: 'manager@terroubi.sn',
         role: Role.ETABLISSEMENT,
         telephone: '+221 33 839 90 00',
-        actif: true,
-        createdAt: '2024-01-19T08:00:00Z',
-        updatedAt: '2024-01-19T08:00:00Z'
+        actif: false
       },
       {
         trackingId: 'USR-006',
@@ -124,9 +147,7 @@ export class UsersComponent implements OnInit {
         email: 'mariama.kane@email.com',
         role: Role.CLIENT,
         telephone: '+221 77 456 78 90',
-        actif: true,
-        createdAt: '2024-01-20T13:00:00Z',
-        updatedAt: '2024-01-20T13:00:00Z'
+        actif: true
       },
       {
         trackingId: 'USR-007',
@@ -135,9 +156,7 @@ export class UsersComponent implements OnInit {
         email: 'ibrahima.fall@email.com',
         role: Role.ADMIN,
         telephone: '+221 76 567 89 01',
-        actif: true,
-        createdAt: '2024-01-21T10:00:00Z',
-        updatedAt: '2024-01-21T10:00:00Z'
+        actif: true
       },
       {
         trackingId: 'USR-008',
@@ -146,9 +165,7 @@ export class UsersComponent implements OnInit {
         email: 'awa.sarr@email.com',
         role: Role.CLIENT,
         telephone: '+221 70 678 90 12',
-        actif: true,
-        createdAt: '2024-01-22T15:00:00Z',
-        updatedAt: '2024-01-22T15:00:00Z'
+        actif: false
       }
     ];
     this.filteredUsers = [...this.users];
@@ -161,7 +178,7 @@ export class UsersComponent implements OnInit {
         user.prenom.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         user.telephone.includes(this.searchTerm);
-      
+
       const matchesRole = this.selectedRole === 'all' || user.role === this.selectedRole;
       
       return matchesSearch && matchesRole;
@@ -208,16 +225,24 @@ export class UsersComponent implements OnInit {
   onUserSaved(user: UserResponse) {
     if (this.selectedUser) {
       // Update existing user in list
-      const index = this.users.findIndex(u => u.trackingId === user.trackingId);
+      const normalizedUser = this.decorateUser(user);
+      const index = this.users.findIndex(u => u.trackingId === normalizedUser.trackingId);
       if (index !== -1) {
-        this.users[index] = user;
+        this.users[index] = normalizedUser;
       }
     } else {
       // Add new user to list
-      this.users.unshift(user);
+      this.users.unshift(this.decorateUser(user));
     }
     this.filterUsers();
-    alert(this.selectedUser ? 'Utilisateur modifié avec succès!' : 'Utilisateur ajouté avec succès!');
+
+    const isUpdate = !!this.selectedUser;
+    const title = isUpdate ? 'Utilisateur modifié' : 'Utilisateur ajouté';
+    const message = isUpdate
+      ? `Les informations de ${user.prenom} ${user.nom} ont été mises à jour.`
+      : `${user.prenom} ${user.nom} a été ajouté avec succès.`;
+
+    this.openFeedbackModal('success', title, message, isUpdate ? '✏️' : '✅');
   }
 
   viewUser(user: UserResponse) {
@@ -229,22 +254,165 @@ export class UsersComponent implements OnInit {
   }
 
   deleteUser(user: UserResponse) {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer ${user.prenom} ${user.nom} ?`)) {
+    this.openConfirmModal({
+      title: 'Supprimer l\'utilisateur',
+      message: `Êtes-vous sûr de vouloir supprimer ${user.prenom} ${user.nom} ? Cette action est irréversible.`,
+      confirmText: 'Supprimer',
+      icon: '🗑️',
+      type: 'danger'
+    }, () => {
+      this.confirmModal.loading = true;
       this.userService.delete(user.trackingId).subscribe({
         next: () => {
           this.users = this.users.filter(u => u.trackingId !== user.trackingId);
           this.filterUsers();
-          alert('Utilisateur supprimé avec succès');
+          this.closeConfirmModal();
+          this.openFeedbackModal(
+            'success',
+            'Utilisateur supprimé',
+            `${user.prenom} ${user.nom} a été supprimé avec succès.`,
+            '🗑️'
+          );
         },
         error: (err) => {
           console.error('Error deleting user:', err);
-          alert('Erreur lors de la suppression de l\'utilisateur');
+          this.confirmModal.loading = false;
+          this.confirmModal.errorMessage = 'Erreur lors de la suppression de l\'utilisateur.';
         }
       });
-    }
+    });
   }
 
   countUsersByRole(role: Role): number {
     return this.users.filter(u => u.role === role).length;
+  }
+
+  getStatusLabel(user: UserResponse): string {
+    return user.actif ? 'Activé' : 'Désactivé';
+  }
+
+  getStatusClass(user: UserResponse): string {
+    return user.actif
+      ? 'bg-emerald-100 text-emerald-700'
+      : 'bg-red-100 text-red-700';
+  }
+
+  isActivable(role: Role): boolean {
+    return this.activableRoles.has(role);
+  }
+
+  toggleActivation(user: UserResponse) {
+    if (!this.isActivable(user.role) || this.togglingUserId === user.trackingId) {
+      return;
+    }
+
+    const willActivate = !user.actif;
+    const roleLabel = this.getRoleLabel(user.role);
+    const actionLabel = willActivate ? 'activer' : 'désactiver';
+
+    this.openConfirmModal({
+      title: `${willActivate ? 'Activation' : 'Désactivation'} ${roleLabel}`,
+      message: `Confirmez-vous vouloir ${actionLabel.toLowerCase()} ${user.prenom} ${user.nom} (${roleLabel}) ?`,
+      confirmText: willActivate ? 'Activer' : 'Désactiver',
+      icon: willActivate ? '✅' : '⚠️',
+      type: willActivate ? 'info' : 'warning'
+    }, () => {
+      this.confirmModal.loading = true;
+      this.togglingUserId = user.trackingId;
+
+      const action$ = willActivate
+        ? this.userService.activer(user.trackingId)
+        : this.userService.desactiver(user.trackingId);
+
+      action$.subscribe({
+        next: () => {
+          user.actif = willActivate;
+          this.filterUsers();
+          this.closeConfirmModal();
+          this.openFeedbackModal(
+            'success',
+            'Statut mis à jour',
+            `${roleLabel} ${willActivate ? 'activé' : 'désactivé'} avec succès.`,
+            willActivate ? '✅' : '⚠️'
+          );
+        },
+        error: (err) => {
+          console.error('Erreur lors du changement de statut:', err);
+          this.confirmModal.loading = false;
+          this.confirmModal.errorMessage = 'Erreur lors de la mise à jour du statut.';
+        },
+        complete: () => {
+          this.togglingUserId = null;
+        }
+      });
+    });
+  }
+
+  isToggling(user: UserResponse): boolean {
+    return this.togglingUserId === user.trackingId;
+  }
+
+  ngOnDestroy(): void {}
+
+  openConfirmModal(
+    config: Partial<Omit<typeof this.confirmModal, 'isOpen' | 'loading' | 'errorMessage'>>,
+    action: () => void
+  ) {
+    this.confirmModal = {
+      ...this.confirmModal,
+      ...config,
+      isOpen: true,
+      loading: false,
+      errorMessage: ''
+    };
+    this.pendingConfirmAction = action;
+  }
+
+  confirmModalConfirmed() {
+    if (this.pendingConfirmAction) {
+      this.pendingConfirmAction();
+    }
+  }
+
+  closeConfirmModal() {
+    this.confirmModal = {
+      ...this.confirmModal,
+      isOpen: false,
+      loading: false,
+      errorMessage: ''
+    };
+    this.pendingConfirmAction = null;
+  }
+
+  cancelConfirmModal() {
+    if (this.confirmModal.loading) {
+      return;
+    }
+    this.closeConfirmModal();
+  }
+
+  openFeedbackModal(type: FeedbackModalType, title: string, message: string, icon?: string) {
+    this.feedbackModal = {
+      isOpen: true,
+      type,
+      title,
+      message,
+      icon: icon ?? (type === 'success' ? '✅' : type === 'error' ? '⚠️' : 'ℹ️'),
+      buttonText: 'Fermer'
+    };
+  }
+
+  closeFeedbackModal() {
+    this.feedbackModal = {
+      ...this.feedbackModal,
+      isOpen: false
+    };
+  }
+
+  private decorateUser(user: UserResponse): UserResponse {
+    return {
+      ...user,
+      actif: user.actif ?? false
+    };
   }
 }

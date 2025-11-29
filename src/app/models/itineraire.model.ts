@@ -16,6 +16,4 @@ export interface ItineraireResponse {
   heureDepart: string;
   prix: number;
   placeDisponible: number;
-  createdAt: string;
-  updatedAt: string;
 }

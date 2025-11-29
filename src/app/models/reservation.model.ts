@@ -1,16 +1,14 @@
 export interface ReservationRequest {
   statut: string;
   dateReservation: string; // ISO LocalDateTime
-  userTrakingId: string; // UUID as string (backend spelling)
+  userTrackingId: string; // UUID as string
 }
 
 export interface ReservationResponse {
   trackingId: string;
   statut: string;
   dateReservation: string; // LocalDateTime
-  ticketHebergementUrl?: string;
+  ticketHebergementUrl: string;
   utilisateurTrackingId: string;
   localTrackingId: string;
-  createdAt: string;
-  updatedAt: string;
 }

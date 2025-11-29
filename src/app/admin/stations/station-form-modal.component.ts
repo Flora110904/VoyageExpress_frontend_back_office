@@ -1,14 +1,15 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CompagnieRequest, CompagnieResponse } from '../../models/compagnie.model';
-import { TypeCompagnie } from '../../models/enums.model';
+import { Role, TypeCompagnie } from '../../models/enums.model';
 import { CompagnieServiceApi } from '../../services/compagnie.service';
+import { UserSelectComponent } from '../../shared/user-select.component';
 
 @Component({
   selector: 'app-station-form-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, UserSelectComponent],
   template: `
     <div *ngIf="isOpen" class="fixed inset-0 z-50 overflow-y-auto" (click)="closeOnBackdrop($event)">
       <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
@@ -27,13 +28,72 @@ import { CompagnieServiceApi } from '../../services/compagnie.service';
               <!-- Nom -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Nom de la station *</label>
-                <input 
-                  type="text" 
-                  [(ngModel)]="formData.nom" 
+                <input
+                  type="text"
+                  [(ngModel)]="formData.nom"
                   name="nom"
                   required
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="Gare Routière Pompiers">
+              </div>
+
+              <!-- Téléphone -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Téléphone *</label>
+                <input
+                  type="tel"
+                  [(ngModel)]="formData.telephone"
+                  name="telephone"
+                  required
+                  maxlength="20"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="+221 33 123 45 67">
+              </div>
+
+              <!-- Email -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  type="email"
+                  [(ngModel)]="formData.email"
+                  name="email"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="contact@station.sn">
+              </div>
+
+              <!-- Adresse -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Adresse</label>
+                <input
+                  type="text"
+                  [(ngModel)]="formData.adresse"
+                  name="adresse"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Dakar, Sénégal">
+              </div>
+
+              <!-- Description -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  [(ngModel)]="formData.description"
+                  name="description"
+                  rows="3"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Décrivez la station"></textarea>
+              </div>
+
+              <!-- Propriétaire -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Responsable de la station *</label>
+                <app-user-select
+                  [selectedUserId]="formData.proprietaireId"
+                  [allowedRoles]="ownerRoles"
+                  (userSelected)="onOwnerSelected($event)">
+                </app-user-select>
+                <p *ngIf="!formData.proprietaireId" class="text-xs text-gray-500 mt-1">
+                  Sélectionnez l'utilisateur responsable de cette station.
+                </p>
               </div>
             </div>
 
@@ -64,30 +124,45 @@ import { CompagnieServiceApi } from '../../services/compagnie.service';
     </div>
   `
 })
-export class StationFormModalComponent implements OnInit {
+export class StationFormModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() station: CompagnieResponse | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<CompagnieResponse>();
 
+  readonly ownerRoles = [Role.COMPAGNIE_BUS];
   isEditMode = false;
   loading = false;
   error: string | null = null;
 
   formData: CompagnieRequest = {
     nom: '',
-    type: TypeCompagnie.STATION as any
+    type: TypeCompagnie.STATION as any,
+    telephone: '',
+    proprietaireId: '',
+    email: '',
+    adresse: '',
+    siteWeb: '',
+    description: '',
+    logo: '',
+    numeroLicence: ''
   };
 
   constructor(private compagnieService: CompagnieServiceApi) {}
 
   ngOnInit() {
     if (this.station) {
-      this.isEditMode = true;
-      this.formData = {
-        nom: this.station.nom,
-        type: TypeCompagnie.STATION as any
-      };
+      this.patchForm(this.station);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['station'] && !changes['station'].firstChange) {
+      if (this.station) {
+        this.patchForm(this.station);
+      } else {
+        this.resetForm();
+      }
     }
   }
 
@@ -95,8 +170,13 @@ export class StationFormModalComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
+    const payload = {
+      ...this.formData,
+      proprietaireId: this.formData.proprietaireId || undefined
+    } as CompagnieRequest;
+
     if (this.isEditMode && this.station) {
-      this.compagnieService.update(this.station.trackingId, this.formData).subscribe({
+      this.compagnieService.update(this.station.trackingId, payload).subscribe({
         next: (response) => {
           this.loading = false;
           this.saved.emit(response);
@@ -109,7 +189,7 @@ export class StationFormModalComponent implements OnInit {
         }
       });
     } else {
-      this.compagnieService.create(this.formData).subscribe({
+      this.compagnieService.create(payload).subscribe({
         next: (response) => {
           this.loading = false;
           this.saved.emit(response);
@@ -133,5 +213,42 @@ export class StationFormModalComponent implements OnInit {
     if ((event.target as HTMLElement).classList.contains('fixed')) {
       this.close();
     }
+  }
+
+  onOwnerSelected(userId: string | null) {
+    this.formData.proprietaireId = userId ?? '';
+  }
+
+  private patchForm(station: CompagnieResponse) {
+    this.isEditMode = true;
+    this.formData = {
+      nom: station.nom,
+      type: TypeCompagnie.STATION as any,
+      telephone: station.telephone ?? '',
+      proprietaireId: station.proprietaireId ?? '',
+      email: station.email ?? '',
+      adresse: station.adresse ?? '',
+      siteWeb: station.siteWeb ?? '',
+      description: station.description ?? '',
+      logo: station.logo ?? '',
+      numeroLicence: station.numeroLicence ?? ''
+    };
+  }
+
+  private resetForm() {
+    this.isEditMode = false;
+    this.formData = {
+      nom: '',
+      type: TypeCompagnie.STATION as any,
+      telephone: '',
+      proprietaireId: '',
+      email: '',
+      adresse: '',
+      siteWeb: '',
+      description: '',
+      logo: '',
+      numeroLicence: ''
+    };
+    this.error = null;
   }
 }

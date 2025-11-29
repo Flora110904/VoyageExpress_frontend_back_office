@@ -9,9 +9,9 @@ export class LocalServiceApi {
   private base = `${environment.apiUrl}/locaux`;
   constructor(private http: HttpClient) {}
 
-  // Note: if backend requires a query param trackingId on create, this matches angular.md suggestion.
-  create(body: LocalRequest, trackingId?: string): Observable<LocalResponse> {
-    const url = `${this.base}/create` + (trackingId ? `?trackingId=${encodeURIComponent(trackingId)}` : '');
+  // Backend expects etablissementTrackingId as query param
+  create(body: LocalRequest, etablissementTrackingId: string): Observable<LocalResponse> {
+    const url = `${this.base}/create?etablissementTrackingId=${encodeURIComponent(etablissementTrackingId)}`;
     return this.http.post<LocalResponse>(url, body);
   }
 

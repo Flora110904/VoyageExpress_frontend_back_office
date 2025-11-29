@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserRequest, UserResponse } from '../../models/user.model';
@@ -20,7 +20,7 @@ import { UserServiceApi } from '../../services/user.service';
           <!-- Header -->
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold text-gray-900">
-              {{ isEditMode ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}
+              Formulaire utilisateur
             </h2>
             <button (click)="close()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
           </div>
@@ -135,7 +135,7 @@ import { UserServiceApi } from '../../services/user.service';
     </div>
   `
 })
-export class UserFormModalComponent implements OnInit {
+export class UserFormModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() user: UserResponse | null = null;
   @Output() closed = new EventEmitter<void>();
@@ -151,23 +151,19 @@ export class UserFormModalComponent implements OnInit {
     prenom: '',
     email: '',
     password: '',
-    role: '',
+    role: Role.CLIENT,
     telephone: ''
   };
 
   constructor(private userService: UserServiceApi) {}
 
   ngOnInit() {
-    if (this.user) {
-      this.isEditMode = true;
-      this.formData = {
-        nom: this.user.nom,
-        prenom: this.user.prenom,
-        email: this.user.email,
-        password: '',
-        role: this.user.role,
-        telephone: this.user.telephone
-      };
+    this.applyUserToForm(this.user);
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['user']) {
+      this.applyUserToForm(changes['user'].currentValue as UserResponse | null);
     }
   }
 
@@ -203,6 +199,30 @@ export class UserFormModalComponent implements OnInit {
           console.error(err);
         }
       });
+    }
+  }
+
+  private applyUserToForm(user: UserResponse | null) {
+    if (user) {
+      this.isEditMode = true;
+      this.formData = {
+        nom: user.nom,
+        prenom: user.prenom,
+        email: user.email,
+        password: '',
+        role: user.role,
+        telephone: user.telephone
+      };
+    } else {
+      this.isEditMode = false;
+      this.formData = {
+        nom: '',
+        prenom: '',
+        email: '',
+        password: '',
+        role: Role.CLIENT,
+        telephone: ''
+      };
     }
   }
 

@@ -11,7 +11,4 @@ export interface EtablissementResponse {
   trackingId: string;
   adresse: string;
   type: TypeEtablissement;
-  actif: boolean;
-  createdAt: string;
-  updatedAt: string;
 }

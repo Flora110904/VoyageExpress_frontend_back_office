@@ -46,8 +46,7 @@ export class CompagniesComponent implements OnInit {
 
   types = [
     { value: 'all', label: 'Tous les types' },
-    { value: TypeCompagnie.AEROPORT, label: 'Compagnie Aérienne' },
-    { value: TypeCompagnie.STATION, label: 'Station de Bus' }
+    { value: TypeCompagnie.AEROPORT, label: 'Compagnie Aérienne' }
   ];
 
   constructor(private compagnieService: CompagnieServiceApi) {}
@@ -62,10 +61,12 @@ export class CompagniesComponent implements OnInit {
     
     this.compagnieService.list().subscribe({
       next: (data) => {
-        this.compagnies = data.map(c => ({
-          ...c,
-          status: 'active' as 'active' | 'inactive'
-        }));
+        this.compagnies = data
+          .filter((compagnie) => compagnie.type === TypeCompagnie.AEROPORT)
+          .map(c => ({
+            ...c,
+            status: 'active' as 'active' | 'inactive'
+          }));
         this.filteredCompagnies = [...this.compagnies];
         this.loading = false;
       },

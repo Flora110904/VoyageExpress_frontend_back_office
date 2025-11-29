@@ -23,7 +23,7 @@ import { ItineraireResponse } from '../../models/itineraire.model';
             </div>
             <div>
               <h2 class="text-2xl font-bold text-gray-900">{{ compagnie.nom }}</h2>
-              <p class="text-sm text-gray-500">{{ compagnie.trackingId }}</p>
+              <p class="text-sm text-gray-500">{{ getTypeLabel(compagnie.type) }}</p>
             </div>
           </div>
           <button (click)="close()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>

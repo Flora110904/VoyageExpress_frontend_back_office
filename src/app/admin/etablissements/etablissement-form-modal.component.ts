@@ -1,14 +1,15 @@
-import { Component, EventEmitter, Input, OnInit, OnChanges, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EtablissementRequest, EtablissementResponse } from '../../models/etablissement.model';
 import { TypeEtablissement } from '../../models/enums.model';
 import { EtablissementServiceApi } from '../../services/etablissement.service';
+import { UserSelectComponent } from '../../shared/user-select.component';
 
 @Component({
   selector: 'app-etablissement-form-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, UserSelectComponent],
   template: `
     <div *ngIf="isOpen" class="fixed inset-0 z-50 overflow-y-auto" (click)="closeOnBackdrop($event)">
       <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
@@ -53,17 +54,14 @@ import { EtablissementServiceApi } from '../../services/etablissement.service';
 
               <!-- Propriétaire ID -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  ID Propriétaire *
-                  <span class="text-xs text-gray-500">(UUID de l'utilisateur gestionnaire)</span>
-                </label>
-                <input 
-                  type="text" 
-                  [(ngModel)]="formData.proprietaireId" 
-                  name="proprietaireId"
-                  required
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="UUID du propriétaire">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Propriétaire *</label>
+                <app-user-select
+                  [selectedUserId]="formData.proprietaireId"
+                  (userSelected)="onOwnerSelected($event)">
+                </app-user-select>
+                <p *ngIf="!formData.proprietaireId" class="text-xs text-gray-500 mt-1">
+                  Sélectionnez un utilisateur qui sera propriétaire de l'établissement.
+                </p>
               </div>
             </div>
 
@@ -115,17 +113,19 @@ export class EtablissementFormModalComponent implements OnInit, OnChanges {
 
   ngOnInit() {}
 
-  ngOnChanges() {
-    if (this.etablissement) {
-      this.isEditMode = true;
-      this.formData = {
-        adresse: this.etablissement.adresse,
-        type: this.etablissement.type,
-        proprietaireId: ''
-      };
-    } else {
-      this.isEditMode = false;
-      this.resetForm();
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['etablissement']) {
+      if (this.etablissement) {
+        this.isEditMode = true;
+        this.formData = {
+          adresse: this.etablissement.adresse,
+          type: this.etablissement.type,
+          proprietaireId: this.etablissement.proprietaireId ?? ''
+        };
+      } else {
+        this.isEditMode = false;
+        this.resetForm();
+      }
     }
   }
 
@@ -142,8 +142,13 @@ export class EtablissementFormModalComponent implements OnInit, OnChanges {
     this.loading = true;
     this.error = null;
 
+    const payload = {
+      ...this.formData,
+      proprietaireId: this.formData.proprietaireId || undefined
+    } as EtablissementRequest;
+
     if (this.isEditMode && this.etablissement) {
-      this.etablissementService.update(this.etablissement.trackingId, this.formData).subscribe({
+      this.etablissementService.update(this.etablissement.trackingId, payload).subscribe({
         next: (response) => {
           this.loading = false;
           this.saved.emit(response);
@@ -156,7 +161,7 @@ export class EtablissementFormModalComponent implements OnInit, OnChanges {
         }
       });
     } else {
-      this.etablissementService.create(this.formData).subscribe({
+      this.etablissementService.create(payload).subscribe({
         next: (response) => {
           this.loading = false;
           this.saved.emit(response);
@@ -180,5 +185,9 @@ export class EtablissementFormModalComponent implements OnInit, OnChanges {
     if ((event.target as HTMLElement).classList.contains('fixed')) {
       this.close();
     }
+  }
+
+  onOwnerSelected(userId: string | null) {
+    this.formData.proprietaireId = userId ?? '';
   }
 }

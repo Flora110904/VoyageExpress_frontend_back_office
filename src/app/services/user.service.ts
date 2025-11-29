@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PasswordUpdateRequest, UserRequest, UserResponse } from '../models';
+import { PasswordUpdateRequest, UserRequest, UserResponse, Role } from '../models';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -37,7 +37,7 @@ export class UserServiceApi {
     return this.http.get<UserResponse[]>(`${this.base}/all`);
   }
 
-  findByRole(role: string): Observable<UserResponse[]> {
+  findByRole(role: Role): Observable<UserResponse[]> {
     return this.http.get<UserResponse[]>(`${this.base}/role/${role}`);
   }
 

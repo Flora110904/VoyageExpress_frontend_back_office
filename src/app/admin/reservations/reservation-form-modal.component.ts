@@ -26,8 +26,8 @@ import { ReservationServiceApi } from '../../services/reservation.service';
               <label class="block text-sm font-medium text-gray-700 mb-1">Utilisateur ID *</label>
               <input 
                 type="text" 
-                [(ngModel)]="formData.userTrakingId" 
-                name="userTrakingId"
+                [(ngModel)]="formData.userTrackingId" 
+                name="userTrackingId"
                 required
                 class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
                 placeholder="ID de l'utilisateur">
@@ -90,7 +90,7 @@ export class ReservationFormModalComponent implements OnChanges {
   formData: ReservationRequest = {
     statut: 'EN_ATTENTE',
     dateReservation: '',
-    userTrakingId: ''
+    userTrackingId: ''
   };
 
   loading: boolean = false;
@@ -105,7 +105,7 @@ export class ReservationFormModalComponent implements OnChanges {
       this.formData = {
         statut: this.reservation.statut,
         dateReservation: this.reservation.dateReservation,
-        userTrakingId: this.reservation.utilisateurTrackingId
+        userTrackingId: this.reservation.utilisateurTrackingId
       };
     } else {
       this.isEditMode = false;
@@ -144,7 +144,7 @@ export class ReservationFormModalComponent implements OnChanges {
     this.formData = {
       statut: 'EN_ATTENTE',
       dateReservation: '',
-      userTrakingId: ''
+      userTrackingId: ''
     };
     this.error = '';
     this.loading = false;

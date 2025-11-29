@@ -6,15 +6,15 @@ import { CompagniesComponent } from './admin/compagnies/compagnies.component';
 import { StationsComponent } from './admin/stations/stations.component';
 import { EtablissementsComponent } from './admin/etablissements/etablissements.component';
 import { LoginComponent } from './auth/login.component';
-// import { authGuard } from './guards/auth.guard'; // Commenter le guard
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/admin/trajets', pathMatch: 'full' }, // Rediriger vers trajets au lieu de login
+  { path: '', redirectTo: '/admin/trajets', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   {
     path: 'admin',
     component: LayoutComponent,
-    // canActivate: [authGuard], // Supprimer le guard
+    canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'trajets', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },

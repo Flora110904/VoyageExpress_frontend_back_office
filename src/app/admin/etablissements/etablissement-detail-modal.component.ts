@@ -21,7 +21,7 @@ import { ReservationResponse } from '../../models/reservation.model';
             </div>
             <div>
               <h2 class="text-2xl font-bold text-gray-900">Établissement</h2>
-              <p class="text-sm text-gray-500">{{ etablissement.trackingId }}</p>
+              <p class="text-sm text-gray-500">{{ getTypeLabel(etablissement.type) }} · {{ etablissement.adresse }}</p>
             </div>
           </div>
           <button (click)="close()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
@@ -95,7 +95,7 @@ import { ReservationResponse } from '../../models/reservation.model';
             <div *ngIf="reservations.length > 0" class="space-y-2 max-h-60 overflow-y-auto">
               <div *ngFor="let reservation of reservations" class="bg-white p-3 rounded-lg">
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{{ reservation.trackingId }}</span>
+                  <span class="text-xs bg-gray-100 px-2 py-1 rounded">Réservation du {{ reservation.dateReservation | date:'short' }}</span>
                   <span class="text-xs px-2 py-1 rounded-full font-semibold" 
                         [ngClass]="{
                           'bg-green-100 text-green-700': reservation.statut === 'CONFIRMEE',
@@ -129,7 +129,6 @@ import { ReservationResponse } from '../../models/reservation.model';
             <div class="space-y-2 text-sm text-gray-600">
               <p>• Établissement de type <strong>{{ getTypeLabel(etablissement.type) }}</strong></p>
               <p>• Situé à: <strong>{{ etablissement.adresse }}</strong></p>
-              <p>• Code de suivi: <code class="bg-white px-2 py-1 rounded text-xs">{{ etablissement.trackingId }}</code></p>
             </div>
           </div>
         </div>

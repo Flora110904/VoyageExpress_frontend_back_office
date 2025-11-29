@@ -6,7 +6,7 @@ import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class VehiculeItineraireServiceApi {
-  private base = `${environment.apiUrl}/vehicules-itineraires`;
+  private base = `${environment.apiUrl}/vehicule-itineraires`;
   constructor(private http: HttpClient) {}
 
   create(body: VehiculeItineraireRequest): Observable<VehiculeItineraireResponse> {

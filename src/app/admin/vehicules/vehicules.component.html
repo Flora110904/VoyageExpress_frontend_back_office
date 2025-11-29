@@ -15,7 +15,7 @@
         [(ngModel)]="searchTerm"
         (input)="filterVehicules()"
         class="w-full px-4 py-2 border rounded-lg"
-        placeholder="Rechercher par ID...">
+        placeholder="Rechercher un véhicule...">
       <select 
         [(ngModel)]="selectedType"
         (change)="filterVehicules()"
@@ -32,7 +32,9 @@
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     <div *ngFor="let vehicule of filteredVehicules" class="card hover:shadow-xl transition-all text-center">
       <div class="text-6xl mb-4">{{ getTypeIcon(vehicule.type) }}</div>
-      <h3 class="font-bold text-lg mb-2">{{ vehicule.trackingId }}</h3>
+      <h3 class="font-bold text-lg mb-2">
+        {{ vehicule.type === TypeVehicule.AVION ? 'Avion' : 'Bus' }} · {{ vehicule.nombrePlace }} places
+      </h3>
       <div class="space-y-2">
         <p class="text-sm">
           <span class="px-2 py-1 rounded-full text-xs font-medium" [ngClass]="getTypeColor(vehicule.type)">

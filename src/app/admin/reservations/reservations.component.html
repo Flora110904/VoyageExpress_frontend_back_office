@@ -17,7 +17,7 @@
           [(ngModel)]="searchTerm"
           (input)="filterReservations()"
           class="w-full px-4 py-2 border rounded-lg"
-          placeholder="Rechercher par ID ou nom...">
+          placeholder="Rechercher par client...">
       </div>
       <div>
         <select 
@@ -42,7 +42,7 @@
       <table class="w-full">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Réservation</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Local</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
@@ -52,9 +52,9 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
           <tr *ngFor="let reservation of filteredReservations" class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ reservation.trackingId }}</td>
-            <td class="px-6 py-4 text-sm text-gray-600">{{ reservation.userName || reservation.utilisateurTrackingId }}</td>
-            <td class="px-6 py-4 text-sm text-gray-600">{{ reservation.localName || reservation.localTrackingId }}</td>
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">Réservation du {{ formatDate(reservation.dateReservation) }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{{ reservation.userName || 'Client inconnu' }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{{ reservation.localName || 'Hébergement inconnu' }}</td>
             <td class="px-6 py-4 text-sm text-gray-600">{{ formatDate(reservation.dateReservation) }}</td>
             <td class="px-6 py-4">
               <span class="px-2 py-1 text-xs font-medium rounded-full" [ngClass]="getStatutClass(reservation.statut)">
@@ -101,7 +101,7 @@
 <app-confirm-modal
   [isOpen]="isConfirmModalOpen"
   [title]="'Supprimer la réservation'"
-  [message]="'Êtes-vous sûr de vouloir supprimer la réservation ' + (reservationToDelete?.trackingId) + ' ? Cette action est irréversible.'"
+  [message]="'Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.'"
   [confirmText]="'Supprimer'"
   [cancelText]="'Annuler'"
   [icon]="'🗑️'"

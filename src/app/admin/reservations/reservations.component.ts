@@ -5,6 +5,8 @@ import { ReservationResponse } from '../../models/reservation.model';
 import { ReservationServiceApi } from '../../services/reservation.service';
 import { ReservationFormModalComponent } from './reservation-form-modal.component';
 import { ConfirmModalComponent } from '../../shared/confirm-modal.component';
+import { UserServiceApi } from '../../services/user.service';
+import { UserResponse } from '../../models/user.model';
 
 interface ReservationExtended extends ReservationResponse {
   userName?: string;
@@ -40,7 +42,10 @@ export class ReservationsComponent implements OnInit {
     { value: 'CANCELLED', label: 'Annulée' }
   ];
 
-  constructor(private reservationService: ReservationServiceApi) {}
+  constructor(
+    private reservationService: ReservationServiceApi,
+    private userService: UserServiceApi
+  ) {}
 
   ngOnInit() {
     this.loadReservations();
@@ -52,9 +57,32 @@ export class ReservationsComponent implements OnInit {
 
     this.reservationService.list().subscribe({
       next: (data) => {
+        // Une première liste brute pour ne pas casser l'affichage si la récupération des utilisateurs échoue
         this.reservations = data;
-        this.filteredReservations = [...this.reservations];
-        this.loading = false;
+
+        // Charger tous les utilisateurs pour construire les noms complets
+        this.userService.list().subscribe({
+          next: (users) => {
+            const userByTrackingId = new Map<string, UserResponse>();
+            (users || []).forEach(u => userByTrackingId.set(u.trackingId, u));
+
+            this.reservations = data.map(res => {
+              const user = userByTrackingId.get(res.utilisateurTrackingId);
+              const userName = user ? `${user.nom} ${user.prenom}` : undefined;
+              return { ...res, userName } as ReservationExtended;
+            });
+
+            this.filteredReservations = [...this.reservations];
+            this.loading = false;
+          },
+          error: (err) => {
+            console.error('Error loading users for reservations:', err);
+            // On garde quand même les réservations sans nom enrichi
+            this.reservations = data as ReservationExtended[];
+            this.filteredReservations = [...this.reservations];
+            this.loading = false;
+          }
+        });
       },
       error: (err) => {
         console.error('Error loading reservations:', err);
@@ -67,8 +95,7 @@ export class ReservationsComponent implements OnInit {
 
   filterReservations() {
     this.filteredReservations = this.reservations.filter(res => {
-      const matchesSearch = (res.userName || '').toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-                           res.trackingId.toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchesSearch = (res.userName || '').toLowerCase().includes(this.searchTerm.toLowerCase());
       const matchesStatut = this.selectedStatut === 'all' || res.statut === this.selectedStatut;
       return matchesSearch && matchesStatut;
     });
