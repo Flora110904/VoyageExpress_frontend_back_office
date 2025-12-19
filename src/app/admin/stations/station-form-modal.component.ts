@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CompagnieRequest, CompagnieResponse } from '../../models/compagnie.model';
 import { Role, TypeCompagnie } from '../../models/enums.model';
+import { UserResponse } from '../../models/user.model';
 import { CompagnieServiceApi } from '../../services/compagnie.service';
 import { UserSelectComponent } from '../../shared/user-select.component';
 
@@ -89,6 +90,7 @@ import { UserSelectComponent } from '../../shared/user-select.component';
                 <app-user-select
                   [selectedUserId]="formData.proprietaireId"
                   [allowedRoles]="ownerRoles"
+                  [disabled]="!!prefillUser"
                   (userSelected)="onOwnerSelected($event)">
                 </app-user-select>
                 <p *ngIf="!formData.proprietaireId" class="text-xs text-gray-500 mt-1">
@@ -127,6 +129,7 @@ import { UserSelectComponent } from '../../shared/user-select.component';
 export class StationFormModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() station: CompagnieResponse | null = null;
+  @Input() prefillUser: UserResponse | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<CompagnieResponse>();
 
@@ -153,6 +156,8 @@ export class StationFormModalComponent implements OnInit, OnChanges {
   ngOnInit() {
     if (this.station) {
       this.patchForm(this.station);
+    } else {
+      this.applyPrefill();
     }
   }
 
@@ -162,7 +167,15 @@ export class StationFormModalComponent implements OnInit, OnChanges {
         this.patchForm(this.station);
       } else {
         this.resetForm();
+        this.applyPrefill();
       }
+    }
+
+    if (
+      !this.isEditMode &&
+      (changes['prefillUser'] || (changes['isOpen'] && changes['isOpen'].currentValue))
+    ) {
+      this.applyPrefill();
     }
   }
 
@@ -237,7 +250,12 @@ export class StationFormModalComponent implements OnInit, OnChanges {
 
   private resetForm() {
     this.isEditMode = false;
-    this.formData = {
+    this.formData = this.getEmptyFormData();
+    this.error = null;
+  }
+
+  private getEmptyFormData(): CompagnieRequest {
+    return {
       nom: '',
       type: TypeCompagnie.STATION as any,
       telephone: '',
@@ -249,6 +267,22 @@ export class StationFormModalComponent implements OnInit, OnChanges {
       logo: '',
       numeroLicence: ''
     };
-    this.error = null;
+  }
+
+  private applyPrefill() {
+    if (this.isEditMode) {
+      return;
+    }
+
+    const baseForm = this.getEmptyFormData();
+
+    if (this.prefillUser) {
+      baseForm.nom = `${this.prefillUser.nom} ${this.prefillUser.prenom}`.trim();
+      baseForm.telephone = this.prefillUser.telephone;
+      baseForm.email = this.prefillUser.email;
+      baseForm.proprietaireId = this.prefillUser.trackingId;
+    }
+
+    this.formData = { ...baseForm };
   }
 }

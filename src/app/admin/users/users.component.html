@@ -80,6 +80,7 @@
             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Rôle</th>
             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Autorisations</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Détails</th>
             <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
@@ -112,6 +113,18 @@
                 <span class="w-2 h-2 rounded-full" [class.bg-emerald-500]="user.actif" [class.bg-red-500]="!user.actif"></span>
                 {{ getStatusLabel(user) }}
               </span>
+            </td>
+            <td class="px-6 py-4">
+              <button
+                (click)="openUserDetails(user)"
+                class="btn btn-light text-sm flex items-center gap-2"
+                title="Voir les informations d'inscription">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Voir
+              </button>
             </td>
             <td class="px-6 py-4">
               <div class="flex items-center justify-end gap-2">
@@ -200,3 +213,161 @@
   (closed)="closeModal()"
   (saved)="onUserSaved($event)">
 </app-user-form-modal>
+
+<!-- Auto creation modals -->
+<app-compagnie-form-modal
+  [isOpen]="compagnieModalOpen"
+  [prefillUser]="compagniePrefillUser"
+  [defaultType]="compagnieModalDefaultType"
+  (closed)="closeCompagnieModal()"
+  (saved)="onCompagnieCreated($event)">
+</app-compagnie-form-modal>
+
+<app-station-form-modal
+  [isOpen]="stationModalOpen"
+  [prefillUser]="stationPrefillUser"
+  (closed)="closeStationModal()"
+  (saved)="onStationCreated($event)">
+</app-station-form-modal>
+
+<app-etablissement-form-modal
+  [isOpen]="etablissementModalOpen"
+  [prefillUser]="etablissementPrefillUser"
+  (closed)="closeEtablissementModal()"
+  (saved)="onEtablissementCreated($event)">
+</app-etablissement-form-modal>
+
+<div 
+  *ngIf="userDetailsModal.isOpen"
+  class="fixed inset-0 z-50 overflow-y-auto"
+  (click)="closeUserDetails()">
+  <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+  <div class="flex min-h-full items-center justify-center p-4">
+    <div 
+      class="relative bg-white rounded-xl shadow-2xl max-w-3xl w-full p-6"
+      (click)="$event.stopPropagation()">
+      <div class="flex items-start justify-between mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900">Détails utilisateur</h2>
+          <p class="text-sm text-gray-500">Informations fournies lors de l'inscription</p>
+        </div>
+        <button type="button" (click)="closeUserDetails()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+      </div>
+
+      <ng-container *ngIf="userDetailsModal.user as detail; else noUserDetail">
+        <div *ngIf="userDetailsModal.loading" class="mb-4 px-4 py-3 rounded-lg bg-primary-50 text-primary-700 text-sm flex items-center gap-2">
+          <span class="loader loader-sm"></span>
+          Chargement des informations complémentaires…
+        </div>
+
+        <div *ngIf="userDetailsModal.error" class="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-700 text-sm">
+          {{ userDetailsModal.error }}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-1">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Nom</p>
+            <p class="text-base font-semibold text-gray-900">{{ detail.nom }}</p>
+          </div>
+
+          <div class="space-y-1">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Prénom</p>
+            <p class="text-base font-semibold text-gray-900">{{ detail.prenom }}</p>
+          </div>
+
+          <div class="space-y-1">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Email</p>
+            <p class="text-base font-semibold text-gray-900 break-all">{{ detail.email }}</p>
+          </div>
+
+          <div class="space-y-1">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Téléphone</p>
+            <p class="text-base font-semibold text-gray-900">{{ detail.telephone }}</p>
+          </div>
+
+          <div class="space-y-1">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Rôle</p>
+            <p class="text-base font-semibold text-gray-900">{{ getRoleLabel(detail.role) }}</p>
+          </div>
+
+          <div class="space-y-1">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Identifiant</p>
+            <p class="text-base font-semibold text-gray-900">{{ detail.trackingId }}</p>
+          </div>
+
+          <div class="space-y-1">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Statut</p>
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold"
+                  [ngClass]="detail.actif ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+              <span class="w-2 h-2 rounded-full" [ngClass]="detail.actif ? 'bg-emerald-500' : 'bg-red-500'"></span>
+              {{ detail.actif ? 'Activé' : "En attente d'activation" }}
+            </span>
+          </div>
+        </div>
+
+        <div 
+          class="bg-primary-50 border border-primary-100 rounded-lg p-4 flex items-start gap-3 mt-6"
+          *ngIf="getPendingValidationMessage(detail) as pendingMessage">
+          <span class="text-primary-500 text-xl">ℹ️</span>
+          <p class="text-sm text-primary-700">{{ pendingMessage }}</p>
+        </div>
+
+        <div *ngIf="userDetailsModal.compagnies.length > 0" class="mt-6 space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🏢</span>
+            <h3 class="text-lg font-semibold text-gray-900">Informations compagnies</h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div *ngFor="let compagnie of userDetailsModal.compagnies" class="border border-gray-200 rounded-lg p-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <p class="text-base font-semibold text-gray-900">{{ compagnie.nom || 'Nom non renseigné' }}</p>
+                <span class="text-xs font-medium px-2 py-1 rounded-full bg-indigo-100 text-indigo-700">{{ getCompagnieTypeLabel(compagnie.type) }}</span>
+              </div>
+              <div class="text-sm text-gray-600 space-y-1">
+                <p><span class="font-medium">Téléphone :</span> {{ compagnie.telephone || '—' }}</p>
+                <p><span class="font-medium">Email :</span> {{ compagnie.email || '—' }}</p>
+                <p><span class="font-medium">Adresse :</span> {{ compagnie.adresse || '—' }}</p>
+                <p><span class="font-medium">Site web :</span> {{ compagnie.siteWeb || '—' }}</p>
+                <p><span class="font-medium">Numéro de licence :</span> {{ compagnie.numeroLicence || '—' }}</p>
+                <p><span class="font-medium">Description :</span> {{ compagnie.description || 'Aucune description fournie.' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="userDetailsModal.etablissements.length > 0" class="mt-8 space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🏨</span>
+            <h3 class="text-lg font-semibold text-gray-900">Informations hébergement</h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div *ngFor="let etablissement of userDetailsModal.etablissements" class="border border-gray-200 rounded-lg p-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <p class="text-base font-semibold text-gray-900">{{ etablissement.nom || 'Nom non renseigné' }}</p>
+                <span class="text-xs font-medium px-2 py-1 rounded-full bg-orange-100 text-orange-700">{{ getEtablissementTypeLabel(etablissement.type) }}</span>
+              </div>
+              <div class="text-sm text-gray-600 space-y-1">
+                <p><span class="font-medium">Adresse :</span> {{ etablissement.adresse || '—' }}</p>
+                <p><span class="font-medium">Description :</span> {{ etablissement.description || 'Aucune description fournie.' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="userDetailsModal.compagnies.length === 0 && userDetailsModal.etablissements.length === 0 && !userDetailsModal.loading" class="mt-6 text-sm text-gray-500">
+          Aucune structure associée n'a encore été enregistrée pour cet utilisateur.
+        </div>
+      </ng-container>
+
+      <ng-template #noUserDetail>
+        <div class="text-center py-12 text-gray-500">Aucune information disponible.</div>
+      </ng-template>
+
+      <div class="mt-6 flex justify-end">
+        <button type="button" (click)="closeUserDetails()" class="btn btn-primary">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -5,6 +5,7 @@ import { ReservationResponse } from '../../models/reservation.model';
 import { ReservationServiceApi } from '../../services/reservation.service';
 import { ReservationFormModalComponent } from './reservation-form-modal.component';
 import { ConfirmModalComponent } from '../../shared/confirm-modal.component';
+import { ReservationDetailModalComponent } from './reservation-detail-modal.component';
 import { UserServiceApi } from '../../services/user.service';
 import { UserResponse } from '../../models/user.model';
 
@@ -15,7 +16,7 @@ interface ReservationExtended extends ReservationResponse {
 
 @Component({
   selector: 'app-reservations',
-  imports: [CommonModule, FormsModule, ReservationFormModalComponent, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule, ReservationFormModalComponent, ConfirmModalComponent, ReservationDetailModalComponent],
   templateUrl: './reservations.component.html',
   styleUrl: './reservations.component.css'
 })
@@ -30,6 +31,8 @@ export class ReservationsComponent implements OnInit {
   // Modal states
   isModalOpen = false;
   selectedReservation: ReservationExtended | null = null;
+  isDetailModalOpen = false;
+  detailReservation: ReservationExtended | null = null;
   isConfirmModalOpen = false;
   confirmModalLoading = false;
   confirmModalError = '';
@@ -109,6 +112,16 @@ export class ReservationsComponent implements OnInit {
   openEditModal(reservation: ReservationExtended) {
     this.selectedReservation = reservation;
     this.isModalOpen = true;
+  }
+
+  openDetailModal(reservation: ReservationExtended) {
+    this.detailReservation = reservation;
+    this.isDetailModalOpen = true;
+  }
+
+  closeDetailModal() {
+    this.isDetailModalOpen = false;
+    this.detailReservation = null;
   }
 
   closeModal() {

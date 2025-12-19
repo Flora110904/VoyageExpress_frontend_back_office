@@ -1,16 +1,34 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Role } from '../../models/enums.model';
+import { Role, TypeCompagnie, TypeEtablissement } from '../../models/enums.model';
+import { CompagnieResponse } from '../../models/compagnie.model';
+import { EtablissementResponse } from '../../models/etablissement.model';
 import { UserResponse } from '../../models/user.model';
 import { UserServiceApi } from '../../services/user.service';
 import { UserFormModalComponent } from './user-form-modal.component';
 import { ConfirmModalComponent } from '../../shared/confirm-modal.component';
 import { ActionFeedbackModalComponent, FeedbackModalType } from '../../shared/action-feedback-modal.component';
+import { CompagnieFormModalComponent } from '../compagnies/compagnie-form-modal.component';
+import { StationFormModalComponent } from '../stations/station-form-modal.component';
+import { EtablissementFormModalComponent } from '../etablissements/etablissement-form-modal.component';
+import { CompagnieServiceApi } from '../../services/compagnie.service';
+import { EtablissementServiceApi } from '../../services/etablissement.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-users',
-  imports: [CommonModule, FormsModule, UserFormModalComponent, ConfirmModalComponent, ActionFeedbackModalComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    UserFormModalComponent,
+    ConfirmModalComponent,
+    ActionFeedbackModalComponent,
+    CompagnieFormModalComponent,
+    StationFormModalComponent,
+    EtablissementFormModalComponent
+  ],
   templateUrl: './users.component.html',
   styleUrl: './users.component.css'
 })
@@ -27,6 +45,26 @@ export class UsersComponent implements OnInit, OnDestroy {
   // Modal state
   isModalOpen = false;
   selectedUser: UserResponse | null = null;
+
+  // Auto-creation modal state
+  compagnieModalOpen = false;
+  stationModalOpen = false;
+  etablissementModalOpen = false;
+
+  compagnieModalDefaultType: TypeCompagnie | null = null;
+  compagniePrefillUser: UserResponse | null = null;
+  stationPrefillUser: UserResponse | null = null;
+  etablissementPrefillUser: UserResponse | null = null;
+
+  // Detail modal state
+  userDetailsModal = {
+    isOpen: false,
+    user: null as UserResponse | null,
+    loading: false,
+    error: '',
+    compagnies: [] as CompagnieResponse[],
+    etablissements: [] as EtablissementResponse[]
+  };
 
   private readonly activableRoles = new Set<Role>([
     Role.COMPAGNIE_AERIEN,
@@ -67,10 +105,115 @@ export class UsersComponent implements OnInit, OnDestroy {
     { value: Role.ETABLISSEMENT, label: 'Établissement' }
   ];
 
-  constructor(private userService: UserServiceApi) {}
+  constructor(
+    private userService: UserServiceApi,
+    private compagnieService: CompagnieServiceApi,
+    private etablissementService: EtablissementServiceApi
+  ) {}
 
   ngOnInit() {
     this.loadUsers();
+  }
+
+  openUserDetails(user: UserResponse) {
+    this.userDetailsModal = {
+      isOpen: true,
+      user,
+      loading: false,
+      error: '',
+      compagnies: [],
+      etablissements: []
+    };
+    this.loadUserDetails(user);
+  }
+
+  closeUserDetails() {
+    this.userDetailsModal = {
+      isOpen: false,
+      user: null,
+      loading: false,
+      error: '',
+      compagnies: [],
+      etablissements: []
+    };
+  }
+
+  getPendingValidationMessage(user: UserResponse | null): string | null {
+    if (!user || !this.activableRoles.has(user.role)) {
+      return null;
+    }
+
+    return user.actif
+      ? 'Cette entité a été validée et peut accéder à son module dédié.'
+      : 'Cette entité devra être validée pour accéder à son module. En attendant, elle dispose d\'un accès client.';
+  }
+
+  private loadUserDetails(user: UserResponse): void {
+    const compagnie$ = this.isCompanyRole(user.role)
+      ? this.compagnieService.list().pipe(
+          map(compagnies => compagnies.filter(compagnie => compagnie.proprietaireId === user.trackingId)),
+          catchError(err => {
+            console.error('Erreur lors de la récupération des compagnies', err);
+            this.userDetailsModal.error = 'Impossible de récupérer les informations de la compagnie.';
+            return of([] as CompagnieResponse[]);
+          })
+        )
+      : of([] as CompagnieResponse[]);
+
+    const etablissement$ = user.role === Role.ETABLISSEMENT
+      ? this.etablissementService.list().pipe(
+          map(etablissements => etablissements.filter(etablissement => etablissement.proprietaireId === user.trackingId)),
+          catchError(err => {
+            console.error('Erreur lors de la récupération des établissements', err);
+            this.userDetailsModal.error = 'Impossible de récupérer les informations de l\'établissement.';
+            return of([] as EtablissementResponse[]);
+          })
+        )
+      : of([] as EtablissementResponse[]);
+
+    this.userDetailsModal.loading = true;
+
+    forkJoin([compagnie$, etablissement$]).subscribe({
+      next: ([compagnies, etablissements]) => {
+        this.userDetailsModal = {
+          ...this.userDetailsModal,
+          compagnies,
+          etablissements,
+          loading: false
+        };
+      },
+      error: () => {
+        this.userDetailsModal.loading = false;
+      }
+    });
+  }
+
+  private isCompanyRole(role: Role): boolean {
+    return role === Role.COMPAGNIE_AERIEN || role === Role.COMPAGNIE_BUS;
+  }
+
+  getCompagnieTypeLabel(type?: TypeCompagnie): string {
+    switch (type) {
+      case TypeCompagnie.AEROPORT:
+        return 'Aéroport (compagnie aérienne)';
+      case TypeCompagnie.STATION:
+        return 'Station (compagnie de bus)';
+      default:
+        return 'Structure';
+    }
+  }
+
+  getEtablissementTypeLabel(type?: TypeEtablissement): string {
+    switch (type) {
+      case TypeEtablissement.Hotel:
+        return 'Hôtel';
+      case TypeEtablissement.Motel:
+        return 'Motel';
+      case TypeEtablissement.Appartement:
+        return 'Appartement';
+      default:
+        return 'Hébergement';
+    }
   }
 
   loadUsers() {
@@ -329,12 +472,17 @@ export class UsersComponent implements OnInit, OnDestroy {
           user.actif = willActivate;
           this.filterUsers();
           this.closeConfirmModal();
-          this.openFeedbackModal(
-            'success',
-            'Statut mis à jour',
-            `${roleLabel} ${willActivate ? 'activé' : 'désactivé'} avec succès.`,
-            willActivate ? '✅' : '⚠️'
-          );
+
+          const autoCreationOpened = willActivate ? this.tryOpenAutoCreationModal(user) : false;
+
+          if (!autoCreationOpened) {
+            this.openFeedbackModal(
+              'success',
+              'Statut mis à jour',
+              `${roleLabel} ${willActivate ? 'activé' : 'désactivé'} avec succès.`,
+              willActivate ? '✅' : '⚠️'
+            );
+          }
         },
         error: (err) => {
           console.error('Erreur lors du changement de statut:', err);
@@ -409,10 +557,79 @@ export class UsersComponent implements OnInit, OnDestroy {
     };
   }
 
+  closeCompagnieModal() {
+    this.compagnieModalOpen = false;
+    this.compagniePrefillUser = null;
+    this.compagnieModalDefaultType = null;
+  }
+
+  closeStationModal() {
+    this.stationModalOpen = false;
+    this.stationPrefillUser = null;
+  }
+
+  closeEtablissementModal() {
+    this.etablissementModalOpen = false;
+    this.etablissementPrefillUser = null;
+  }
+
+  onCompagnieCreated(compagnie: CompagnieResponse) {
+    this.openFeedbackModal(
+      'success',
+      'Compagnie enregistrée',
+      `La compagnie ${compagnie.nom} a été enregistrée avec succès.`,
+      compagnie.type === TypeCompagnie.STATION ? '🚌' : '✈️'
+    );
+  }
+
+  onStationCreated(station: CompagnieResponse) {
+    this.openFeedbackModal(
+      'success',
+      'Station enregistrée',
+      `La station ${station.nom} a été enregistrée avec succès.`,
+      '🚌'
+    );
+  }
+
+  onEtablissementCreated(etablissement: EtablissementResponse) {
+    this.openFeedbackModal(
+      'success',
+      'Établissement enregistré',
+      `L'établissement situé à ${etablissement.adresse} a été enregistré avec succès.`,
+      '🏨'
+    );
+  }
+
   private decorateUser(user: UserResponse): UserResponse {
     return {
       ...user,
       actif: user.actif ?? false
     };
+  }
+
+  private tryOpenAutoCreationModal(user: UserResponse): boolean {
+    this.closeCompagnieModal();
+    this.closeStationModal();
+    this.closeEtablissementModal();
+
+    const prefill: UserResponse = { ...user };
+
+    switch (user.role) {
+      case Role.COMPAGNIE_AERIEN:
+        this.compagniePrefillUser = prefill;
+        this.compagnieModalDefaultType = TypeCompagnie.AEROPORT;
+        this.compagnieModalOpen = true;
+        return true;
+      case Role.COMPAGNIE_BUS:
+        this.stationPrefillUser = prefill;
+        this.stationModalOpen = true;
+        return true;
+      case Role.ETABLISSEMENT:
+        this.etablissementPrefillUser = prefill;
+        this.etablissementModalOpen = true;
+        return true;
+      default:
+        return false;
+    }
   }
 }

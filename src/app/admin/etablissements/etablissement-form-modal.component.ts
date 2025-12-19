@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EtablissementRequest, EtablissementResponse } from '../../models/etablissement.model';
 import { TypeEtablissement } from '../../models/enums.model';
+import { UserResponse } from '../../models/user.model';
 import { EtablissementServiceApi } from '../../services/etablissement.service';
 import { UserSelectComponent } from '../../shared/user-select.component';
 
@@ -25,6 +26,18 @@ import { UserSelectComponent } from '../../shared/user-select.component';
 
           <form (ngSubmit)="onSubmit()" #etablissementForm="ngForm">
             <div class="space-y-4">
+              <!-- Nom -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nom de l'hébergement *</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="formData.nom" 
+                  name="nom"
+                  required
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Hôtel Teranga">
+              </div>
+
               <!-- Adresse -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Adresse *</label>
@@ -52,11 +65,23 @@ import { UserSelectComponent } from '../../shared/user-select.component';
                 </select>
               </div>
 
+              <!-- Description -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  [(ngModel)]="formData.description"
+                  name="description"
+                  rows="3"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Ajoutez une description courte de l'hébergement."></textarea>
+              </div>
+
               <!-- Propriétaire ID -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Propriétaire *</label>
                 <app-user-select
                   [selectedUserId]="formData.proprietaireId"
+                  [disabled]="!!prefillUser"
                   (userSelected)="onOwnerSelected($event)">
                 </app-user-select>
                 <p *ngIf="!formData.proprietaireId" class="text-xs text-gray-500 mt-1">
@@ -95,6 +120,7 @@ import { UserSelectComponent } from '../../shared/user-select.component';
 export class EtablissementFormModalComponent implements OnInit, OnChanges {
   @Input() isOpen: boolean = false;
   @Input() etablissement?: any | null;
+  @Input() prefillUser: UserResponse | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<EtablissementResponse>();
 
@@ -104,35 +130,53 @@ export class EtablissementFormModalComponent implements OnInit, OnChanges {
   error: string | null = null;
 
   formData: EtablissementRequest = {
+    nom: '',
     adresse: '',
     type: TypeEtablissement.Hotel,
+    description: '',
     proprietaireId: ''
   };
 
   constructor(private etablissementService: EtablissementServiceApi) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    if (!this.etablissement) {
+      this.applyPrefill();
+    }
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['etablissement']) {
       if (this.etablissement) {
         this.isEditMode = true;
         this.formData = {
+          nom: this.etablissement.nom ?? '',
           adresse: this.etablissement.adresse,
           type: this.etablissement.type,
+          description: this.etablissement.description ?? '',
           proprietaireId: this.etablissement.proprietaireId ?? ''
         };
       } else {
         this.isEditMode = false;
         this.resetForm();
+        this.applyPrefill();
       }
+    }
+
+    if (
+      !this.isEditMode &&
+      (changes['prefillUser'] || (changes['isOpen'] && changes['isOpen'].currentValue))
+    ) {
+      this.applyPrefill();
     }
   }
 
   resetForm() {
     this.formData = {
+      nom: '',
       adresse: '',
       type: TypeEtablissement.Hotel,
+      description: '',
       proprietaireId: ''
     };
     this.error = null;
@@ -189,5 +233,16 @@ export class EtablissementFormModalComponent implements OnInit, OnChanges {
 
   onOwnerSelected(userId: string | null) {
     this.formData.proprietaireId = userId ?? '';
+  }
+
+  private applyPrefill() {
+    if (this.isEditMode) {
+      return;
+    }
+
+    if (this.prefillUser) {
+      this.formData.nom = `${this.prefillUser.nom} ${this.prefillUser.prenom}`.trim();
+      this.formData.proprietaireId = this.prefillUser.trackingId;
+    }
   }
 }

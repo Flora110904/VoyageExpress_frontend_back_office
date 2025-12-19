@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CompagnieRequest, CompagnieResponse } from '../../models/compagnie.model';
 import { Role, TypeCompagnie } from '../../models/enums.model';
+import { UserResponse } from '../../models/user.model';
 import { CompagnieServiceApi } from '../../services/compagnie.service';
 import { UserSelectComponent } from '../../shared/user-select.component';
 
@@ -136,6 +137,7 @@ import { UserSelectComponent } from '../../shared/user-select.component';
                 <app-user-select
                   [selectedUserId]="formData.proprietaireId"
                   [allowedRoles]="ownerRoles"
+                  [disabled]="!!prefillUser"
                   (userSelected)="onOwnerSelected($event)">
                 </app-user-select>
                 <p *ngIf="!formData.proprietaireId" class="text-xs text-gray-500 mt-1">
@@ -174,6 +176,8 @@ import { UserSelectComponent } from '../../shared/user-select.component';
 export class CompagnieFormModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() compagnie: CompagnieResponse | null = null;
+  @Input() prefillUser: UserResponse | null = null;
+  @Input() defaultType: TypeCompagnie | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<CompagnieResponse>();
 
@@ -198,7 +202,11 @@ export class CompagnieFormModalComponent implements OnInit, OnChanges {
 
   constructor(private compagnieService: CompagnieServiceApi) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    if (!this.compagnie) {
+      this.applyPrefill();
+    }
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['compagnie']) {
@@ -219,7 +227,15 @@ export class CompagnieFormModalComponent implements OnInit, OnChanges {
       } else {
         this.isEditMode = false;
         this.resetForm();
+        this.applyPrefill();
       }
+    }
+
+    if (
+      !this.isEditMode &&
+      (changes['prefillUser'] || changes['defaultType'] || (changes['isOpen'] && changes['isOpen'].currentValue))
+    ) {
+      this.applyPrefill();
     }
   }
 
@@ -277,9 +293,14 @@ export class CompagnieFormModalComponent implements OnInit, OnChanges {
   }
 
   private resetForm() {
-    this.formData = {
+    this.formData = this.getEmptyFormData();
+    this.error = null;
+  }
+
+  private getEmptyFormData(): CompagnieRequest {
+    return {
       nom: '',
-      type: TypeCompagnie.AEROPORT as any,
+      type: (this.defaultType ?? TypeCompagnie.AEROPORT) as any,
       telephone: '',
       proprietaireId: '',
       email: '',
@@ -289,6 +310,22 @@ export class CompagnieFormModalComponent implements OnInit, OnChanges {
       logo: '',
       numeroLicence: ''
     };
-    this.error = null;
+  }
+
+  private applyPrefill() {
+    if (this.isEditMode) {
+      return;
+    }
+
+    const baseForm = this.getEmptyFormData();
+
+    if (this.prefillUser) {
+      baseForm.nom = `${this.prefillUser.nom} ${this.prefillUser.prenom}`.trim();
+      baseForm.telephone = this.prefillUser.telephone;
+      baseForm.email = this.prefillUser.email;
+      baseForm.proprietaireId = this.prefillUser.trackingId;
+    }
+
+    this.formData = { ...baseForm };
   }
 }

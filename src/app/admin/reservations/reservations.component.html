@@ -62,7 +62,13 @@
               </span>
             </td>
             <td class="px-6 py-4">
-              <div class="flex gap-2">
+              <div class="flex gap-3">
+                <button 
+                  (click)="openDetailModal(reservation)"
+                  class="text-gray-600 hover:text-gray-900"
+                  title="Voir les détails">
+                  👁️
+                </button>
                 <button 
                   (click)="openEditModal(reservation)"
                   class="text-blue-600 hover:text-blue-800"
@@ -111,3 +117,9 @@
   (confirmed)="confirmDelete()"
   (cancelled)="cancelDelete()">
 </app-confirm-modal>
+
+<app-reservation-detail-modal
+  *ngIf="isDetailModalOpen"
+  [reservation]="detailReservation"
+  (closed)="closeDetailModal()">
+</app-reservation-detail-modal>
